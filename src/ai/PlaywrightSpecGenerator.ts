@@ -6,17 +6,13 @@ export class PlaywrightSpecGenerator {
         const serializedSpec = JSON.stringify(spec, null, 4);
 
         return `import { test } from '@playwright/test';
-import { TestActionRunner } from '../src/runner/TestActionRunner';
+import { TestSpec } from '../src/ai/TestSpecSchema';
+import { TestSpecRunner } from '../src/runner/TestSpecRunner';
 
-const spec = ${serializedSpec} as const;
+const spec: TestSpec = ${serializedSpec};
 
 test(${JSON.stringify(spec.title)}, async ({ page }) => {
-    await page.goto(${JSON.stringify(spec.url)});
-    const runner = new TestActionRunner();
-
-    for (const action of spec.actions) {
-        await runner.run(page, action);
-    }
+    await new TestSpecRunner().run(page, spec);
 });
 `;
     }

@@ -11,8 +11,9 @@ export class PromptToSpecGenerator {
 
     async generate(instruction: string): Promise<{ spec: TestSpec; playwrightSpec: string }> {
         const prompt = `Convert the user instruction into one test spec as JSON only.\n\n` +
-            `Required shape: {"title": string, "instruction": string, "url": string, "actions": TestAction[]}.\n` +
+            `Required shape: {"title": string, "instruction": string, "url": string, "actions": TestAction[], "assertions": [{"type":"url","expected":string} | {"type":"textVisible","text":string}]}.\n` +
             `Use only a URL supplied in the instruction or provided page context; do not invent URLs.\n` +
+            `Include at least one observable assertion that proves the requested outcome.\n` +
             `Allowed actions: click, fill, check, uncheck, select. Each action has a target with a non-empty category and optional text, value, id, or name. Fill and select require inputValue. Do not invent selectors.\n\n` +
             `User instruction:\n${instruction}`;
 

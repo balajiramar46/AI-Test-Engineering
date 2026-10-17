@@ -13,9 +13,10 @@ test('generates a valid structured test spec and Playwright source deterministic
     expect(first.playwrightSpec).toBe(second.playwrightSpec);
     expect(TestSpecSchema.safeParse(first.spec).success).toBe(true);
     expect(first.spec.actions).toHaveLength(1);
+    expect(first.spec.assertions).toEqual([{ type: 'textVisible', text: 'Login complete' }]);
     expect(first.playwrightSpec).toContain('test("Click the Login button"');
-    expect(first.playwrightSpec).toContain('await page.goto("http://127.0.0.1:8081/button.html")');
-    expect(first.playwrightSpec).toContain('new TestActionRunner()');
+  expect(first.playwrightSpec).toContain('"url": "http://127.0.0.1:8081/button.html"');
+    expect(first.playwrightSpec).toContain('new TestSpecRunner().run(page, spec)');
 });
 
 test('rejects malformed provider output before generating executable source', async () => {

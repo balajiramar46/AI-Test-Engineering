@@ -7,7 +7,14 @@
 
     <h2>Button Test</h2>
 
-    <button>Login</button>
+    <button id="login-button">Login</button>
+    <p id="login-status" aria-live="polite"></p>
+
+    <script>
+        document.querySelector('#login-button').addEventListener('click', () => {
+            document.querySelector('#login-status').textContent = 'Login complete';
+        });
+    </script>
 
 </body>
 </html>

@@ -12,6 +12,9 @@ export class MockTestSpecProvider implements LLMProvider {
                     action: 'click',
                     target: { category: 'button', text: 'Login' }
                 }
+            ],
+            assertions: [
+                { type: 'textVisible', text: 'Login complete' }
             ]
         });
     }
