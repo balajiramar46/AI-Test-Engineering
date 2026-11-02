@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Local product search demo</title>
+</head>
+<body>
+    <h1>Product search</h1>
+    <form id="search-form">
+        <label for="search-input">Search products</label>
+        <input id="search-input" name="q" type="search" placeholder="Search products">
+        <button type="submit">Search</button>
+    </form>
+    <ul id="results" aria-live="polite"></ul>
+    <section id="product-details" hidden>
+        <h2 id="selected-product"></h2>
+        <button id="add-to-cart" type="button">Add to cart</button>
+        <p id="cart-status" aria-live="polite"></p>
+    </section>
+
+    <script>
+        const products = ['Laptop', 'Phone', 'Headphones'];
+        const form = document.querySelector('#search-form');
+        const input = document.querySelector('#search-input');
+        const results = document.querySelector('#results');
+        const details = document.querySelector('#product-details');
+        const selectedProduct = document.querySelector('#selected-product');
+        const cartStatus = document.querySelector('#cart-status');
+        let productInDetails = '';
+
+        form.addEventListener('submit', event => {
+            event.preventDefault();
+            const query = input.value.trim().toLowerCase();
+            const matches = products.filter(product => product.toLowerCase().includes(query));
+            results.replaceChildren();
+            details.hidden = true;
+            cartStatus.textContent = '';
+
+            if (matches.length === 0) {
+                const message = document.createElement('li');
+                message.textContent = 'No results found';
+                results.append(message);
+                return;
+            }
+
+            for (const product of matches) {
+                const item = document.createElement('li');
+                const openProduct = document.createElement('button');
+                openProduct.type = 'button';
+                openProduct.textContent = product;
+                openProduct.addEventListener('click', () => {
+                    productInDetails = product;
+                    selectedProduct.textContent = product;
+                    details.hidden = false;
+                });
+                item.append(openProduct);
+                results.append(item);
+            }
+        });
+
+        document.querySelector('#add-to-cart').addEventListener('click', () => {
+            cartStatus.textContent = `${productInDetails} added to cart`;
+        });
+    </script>
+</body>
+</html>

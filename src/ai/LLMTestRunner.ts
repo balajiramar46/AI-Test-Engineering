@@ -5,6 +5,10 @@ import { LLMPromptBuilder } from '../ai/LLMPromptBuilder';
 import { LLMTestActionParser } from '../ai/LLMTestActionParser';
 import { TestActionRunner } from '../runner/TestActionRunner';
 
+const debugLog = (...args: unknown[]): void => {
+    if (process.env.FRAMEWORK_DEBUG === '1') console.log(...args);
+};
+
 export class LLMTestRunner {
 
     private promptBuilder: LLMPromptBuilder;
@@ -22,36 +26,36 @@ export class LLMTestRunner {
         instruction: string
     ): Promise<void> {
 
-        console.log('========================================');
-        console.log('AI TEST RUNNER');
-        console.log('========================================');
-        console.log('Instruction:', instruction);
+        debugLog('========================================');
+        debugLog('AI TEST RUNNER');
+        debugLog('========================================');
+        debugLog('Instruction:', instruction);
 
         const prompt = this.promptBuilder.build(instruction);
 
-        console.log('GENERATED LLM PROMPT');
-        console.log(prompt);
+        debugLog('GENERATED LLM PROMPT');
+        debugLog(prompt);
 
         const llmResponse = await this.provider.generate(prompt);
 
-        console.log('LLM RESPONSE');
-        console.log(llmResponse);
+        debugLog('LLM RESPONSE');
+        debugLog(llmResponse);
 
         // Parse and validate the complete sequence
         const testActions = this.parser.parseSequence(llmResponse);
 
-        console.log('VALIDATED TEST ACTION SEQUENCE');
-        console.log(testActions);
+        debugLog('VALIDATED TEST ACTION SEQUENCE');
+        debugLog(testActions);
 
         // Execute actions in order
         for (const [index, testAction] of testActions.entries()) {
-            console.log(
+            debugLog(
                 `Executing action ${index + 1} of ${testActions.length}`
             );
 
             await this.actionRunner.run(page, testAction);
         }
 
-        console.log('AI TEST RUNNER COMPLETED');
+        debugLog('AI TEST RUNNER COMPLETED');
     }
 }

@@ -1,0 +1,17 @@
+[
+  {
+    "product": "laptop",
+    "expectedProduct": "Laptop",
+    "expectedCount": 1
+  },
+  {
+    "product": "phone",
+    "expectedProduct": "Phone",
+    "expectedCount": 2
+  },
+  {
+    "product": "headphones",
+    "expectedProduct": "Headphones",
+    "expectedCount": 1
+  }
+]

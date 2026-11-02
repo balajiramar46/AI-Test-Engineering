@@ -1,6 +1,10 @@
 
 import { LLMProvider } from './LLMProvider';
 
+const debugLog = (...args: unknown[]): void => {
+    if (process.env.FRAMEWORK_DEBUG === '1') console.log(...args);
+};
+
 export class MockLLMProvider implements LLMProvider {
     constructor(
         private readonly username = 'standard_user',
@@ -8,8 +12,8 @@ export class MockLLMProvider implements LLMProvider {
     ) {}
 
     async generate(prompt: string): Promise<string> {
-        console.log('Received by Mock LLM Provider:');
-        console.log(prompt);
+        debugLog('Received by Mock LLM Provider:');
+        debugLog(prompt);
 
         return JSON.stringify({
             actions: [

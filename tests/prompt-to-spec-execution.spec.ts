@@ -13,3 +13,20 @@ test('executes actions from a generated spec against the local test page', async
 
     await expect(page.getByText('Login complete', { exact: true })).toBeVisible();
 });
+
+test('uses a caller supplied local app URL and discovered page elements as mock context', async ({ page }) => {
+    const appUrl = 'http://127.0.0.1:8081/button.html';
+    await page.goto(appUrl);
+
+    const { spec } = await new PromptToSpecGenerator(
+        new MockTestSpecProvider()
+    ).generate('Click the Login button', { appUrl, page });
+
+    expect(spec.url).toBe(appUrl);
+    expect(spec.actions[0]).toEqual({
+        action: 'click',
+        target: { category: 'button', text: 'Login', id: 'login-button' }
+    });
+    await new TestSpecRunner().run(page, spec);
+    await expect(page.getByText('Login complete', { exact: true })).toBeVisible();
+});

@@ -3,6 +3,26 @@ import { test, expect } from '@playwright/test';
 import { LocatorIntelligence } from '../src/locator/LocatorIntelligence';
 import { DiscoveredElement } from '../src/models/DiscoveredElement';
 
+test('uses the single visible match when an attribute is duplicated on a hidden control', async ({ page }) => {
+    await page.setContent(`
+        <input name="q" placeholder="Search products">
+        <input name="q" placeholder="Search products" style="display: none">
+    `);
+
+    const element: DiscoveredElement = {
+        tag: 'input', type: 'text', category: 'input', id: null, name: 'q',
+        text: '', value: null, placeholder: 'Search products', ariaLabel: null,
+        title: null, visible: true
+    };
+    const result = await new LocatorIntelligence().findBestLocator(page, element);
+
+    expect(result?.locator).toBe('[name="q"]:visible');
+    expect(result?.confidence).toBe('MEDIUM');
+    await page.locator(result!.locator).fill('laptop');
+    await expect(page.locator('input:visible')).toHaveValue('laptop');
+    await expect(page.locator('input').nth(1)).toHaveValue('');
+});
+
 test('should generate locator using ID', async ({ page }) => {
 
     await page.goto(

@@ -1,6 +1,10 @@
 import OpenAI from 'openai';
 import { LLMProvider } from './LLMProvider';
 
+const debugLog = (...args: unknown[]): void => {
+    if (process.env.FRAMEWORK_DEBUG === '1') console.log(...args);
+};
+
 export class OpenAIProvider implements LLMProvider {
 
     private client: OpenAI;
@@ -25,10 +29,10 @@ export class OpenAIProvider implements LLMProvider {
         prompt: string
     ): Promise<string> {
 
-        console.log('========================================');
-        console.log('OPENAI PROVIDER');
-        console.log('========================================');
-        console.log('Sending request to OpenAI...');
+        debugLog('========================================');
+        debugLog('OPENAI PROVIDER');
+        debugLog('========================================');
+        debugLog('Sending request to OpenAI...');
 
         const response =
             await this.client.responses.create({
@@ -36,7 +40,7 @@ export class OpenAIProvider implements LLMProvider {
                 input: prompt
             });
 
-        console.log('OpenAI response received.');
+        debugLog('OpenAI response received.');
 
         return response.output_text;
     }

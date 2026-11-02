@@ -6,7 +6,13 @@ import { CandidateScoring } from '../locator/CandidateScoring';
 import { CandidateSelector } from '../locator/CandidateSelector';
 import { ActionExecutor } from '../actions/ActionExecutor';
 import { TestAction } from '../models/TestAction';
+import { PageObjectRegistry } from '../pages/PageObjectRegistry';
+import { SelfHealingLocator } from '../locator/SelfHealingLocator';
 
+
+const debugLog = (...args: unknown[]): void => {
+    if (process.env.FRAMEWORK_DEBUG === '1') console.log(...args);
+};
 
 export class TestActionRunner {
 
@@ -15,6 +21,8 @@ export class TestActionRunner {
     private selector: CandidateSelector;
     private locatorEngine: LocatorIntelligence;
     private executor: ActionExecutor;
+    private pageObjects: PageObjectRegistry;
+    private selfHealingLocator: SelfHealingLocator;
 
 
     constructor() {
@@ -28,6 +36,8 @@ export class TestActionRunner {
         this.locatorEngine = new LocatorIntelligence();
 
         this.executor = new ActionExecutor();
+        this.pageObjects = new PageObjectRegistry();
+        this.selfHealingLocator = new SelfHealingLocator();
     }
 
 
@@ -36,18 +46,25 @@ export class TestActionRunner {
         testAction: TestAction
     ): Promise<void> {
 
-        console.log(
-            '========================================'
-        );
+        const actionName = testAction.action === 'pageObject'
+            ? `${testAction.target.pageObject ?? 'PageObject'}.${testAction.target.method ?? 'unknown'}`
+            : testAction.action;
+        console.log(`Action: ${actionName}`);
 
-        console.log(
-            'Executing Test Action:',
-            testAction
-        );
+        if (testAction.action === 'pageObject') {
+            await this.pageObjects.run(page, testAction);
+            console.log('Action completed');
+            return;
+        }
 
-        console.log(
-            '========================================'
-        );
+        if (testAction.action === 'press') {
+            if (!testAction.inputValue) {
+                throw new Error('Press action requires a key in inputValue');
+            }
+            await this.executor.pressKey(page, testAction.inputValue);
+            console.log('Action completed');
+            return;
+        }
 
 
         // -----------------------------------------
@@ -61,7 +78,7 @@ export class TestActionRunner {
             );
 
 
-        console.log(
+        debugLog(
             'Matching candidates:',
             candidates.length
         );
@@ -70,7 +87,7 @@ export class TestActionRunner {
         candidates.forEach(
             (element, index) => {
 
-                console.log(
+                debugLog(
                     `Candidate ${index}:`,
                     element
                 );
@@ -98,18 +115,19 @@ export class TestActionRunner {
         const scores =
             await this.scoringEngine.scoreCandidates(
                 page,
-                candidates
+                candidates,
+                testAction.target.intent
             );
 
 
-        console.log(
+        debugLog(
             'Candidate scores:'
         );
 
 
         scores.forEach(result => {
 
-            console.log(
+            debugLog(
                 `Candidate ${result.index}:`,
                 result
             );
@@ -125,7 +143,7 @@ export class TestActionRunner {
             this.selector.selectBest(scores);
 
 
-        console.log(
+        debugLog(
             'Best candidate:',
             bestCandidate
         );
@@ -137,33 +155,33 @@ export class TestActionRunner {
 
         if (!bestCandidate) {
 
-    console.log(
+    debugLog(
         '========================================'
     );
 
-    console.log(
+    debugLog(
         'ACTION BLOCKED'
     );
 
-    console.log(
+    debugLog(
         '========================================'
     );
 
-    console.log(
+    debugLog(
         'Reason: Multiple candidates have the same highest score.'
     );
 
-    console.log(
+    debugLog(
         'Target:',
         testAction.target
     );
 
-    console.log(
+    debugLog(
         'Candidates:',
         candidates.length
     );
 
-    console.log(
+    debugLog(
         'Action was NOT executed.'
     );
 
@@ -202,22 +220,22 @@ export class TestActionRunner {
         // 8. Locator Result
         // -----------------------------------------
 
-        console.log(
+        debugLog(
             'Best locator:',
             locatorResult.locator
         );
 
-        console.log(
+        debugLog(
             'Locator strategy:',
             locatorResult.strategy
         );
 
-        console.log(
+        debugLog(
             'Locator confidence:',
             locatorResult.confidence
         );
 
-        console.log(
+        debugLog(
             'Locator reason:',
             locatorResult.reason
         );
@@ -227,6 +245,57 @@ export class TestActionRunner {
         // 9. Execute Action
         // -----------------------------------------
 
+        try {
+            await this.executeLocatedAction(page, locatorResult.locator, testAction);
+        } catch (error) {
+            if (!this.isRecoverableLocatorError(error)) throw error;
+
+            const replacement = await this.selfHealingLocator.findReplacement(
+                page,
+                testAction.target,
+                locatorResult.locator
+            );
+
+            if (!replacement) throw error;
+
+            console.log('Locator recovery: rediscovered target; retrying action once');
+            await this.executeLocatedAction(page, replacement, testAction);
+            locatorResult.locator = replacement;
+        }
+
+        console.log('Action completed');
+
+        // -----------------------------------------
+        // 10. Validate Action
+        // -----------------------------------------
+
+        await this.validateAction(
+            page,
+            locatorResult.locator,
+            testAction
+        );
+
+
+        debugLog(
+            'Action validation completed successfully'
+        );
+
+
+        debugLog(
+            '========================================'
+        );
+    }
+
+    private isRecoverableLocatorError(error: unknown): boolean {
+        const message = error instanceof Error ? error.message : String(error);
+        return /strict mode violation|waiting for locator|locator resolved to|element is not visible|element is not attached|detached from the DOM|not attached to the DOM/i.test(message);
+    }
+
+    private async executeLocatedAction(
+        page: Page,
+        locator: string,
+        testAction: TestAction
+    ): Promise<void> {
         switch (testAction.action) {
 
 
@@ -238,7 +307,7 @@ export class TestActionRunner {
 
                 await this.executor.click(
                     page,
-                    locatorResult.locator
+                    locator
                 );
 
                 break;
@@ -262,7 +331,7 @@ export class TestActionRunner {
 
                 await this.executor.fill(
                     page,
-                    locatorResult.locator,
+                    locator,
                     testAction.inputValue
                 );
 
@@ -277,7 +346,7 @@ export class TestActionRunner {
 
                 await this.executor.check(
                     page,
-                    locatorResult.locator
+                    locator
                 );
 
                 break;
@@ -291,7 +360,7 @@ export class TestActionRunner {
 
                 await this.executor.uncheck(
                     page,
-                    locatorResult.locator
+                    locator
                 );
 
                 break;
@@ -315,7 +384,7 @@ export class TestActionRunner {
 
                 await this.executor.select(
                     page,
-                    locatorResult.locator,
+                    locator,
                     testAction.inputValue
                 );
 
@@ -330,30 +399,6 @@ export class TestActionRunner {
         }
 
 
-        console.log(
-            'Action completed successfully'
-        );
-
-
-        // -----------------------------------------
-        // 10. Validate Action
-        // -----------------------------------------
-
-        await this.validateAction(
-            page,
-            locatorResult.locator,
-            testAction
-        );
-
-
-        console.log(
-            'Action validation completed successfully'
-        );
-
-
-        console.log(
-            '========================================'
-        );
     }
 
 
@@ -377,7 +422,7 @@ export class TestActionRunner {
 
             case 'click':
 
-                console.log(
+                debugLog(
                     'Validating CLICK'
                 );
 
@@ -400,7 +445,7 @@ export class TestActionRunner {
                 }
 
 
-                console.log(
+                debugLog(
                     `Validating FILL: expected "${testAction.inputValue}"`
                 );
 
@@ -420,7 +465,7 @@ export class TestActionRunner {
 
             case 'check':
 
-                console.log(
+                debugLog(
                     'Validating CHECK'
                 );
 
@@ -438,7 +483,7 @@ export class TestActionRunner {
 
             case 'uncheck':
 
-                console.log(
+                debugLog(
                     'Validating UNCHECK'
                 );
 
@@ -466,7 +511,7 @@ export class TestActionRunner {
                 }
 
 
-                console.log(
+                debugLog(
                     `Validating SELECT: expected "${testAction.inputValue}"`
                 );
 

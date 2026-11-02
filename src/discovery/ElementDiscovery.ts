@@ -181,6 +181,19 @@ export class ElementDiscovery {
                 return false;
             }
 
+            if (target.intent === 'search') {
+                const searchClues = [
+                    element.text,
+                    element.name,
+                    element.placeholder,
+                    element.ariaLabel,
+                    element.title
+                ].filter(Boolean).join(' ');
+                if (!/search|query|lookup|find/i.test(searchClues)) {
+                    return false;
+                }
+            }
+
             // Text
             if (
                 target.text &&

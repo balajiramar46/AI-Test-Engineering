@@ -6,6 +6,10 @@ import { LocatorStrategy } from '../models/LocatorStrategy';
 
 import { LOCATOR_STRATEGY_PRIORITY } from './LocatorStrategyConfig';
 
+const debugLog = (...args: unknown[]): void => {
+    if (process.env.FRAMEWORK_DEBUG === '1') console.log(...args);
+};
+
 export class LocatorIntelligence {
 
     getStrategyPriority(): readonly LocatorStrategy[] {
@@ -34,7 +38,7 @@ export class LocatorIntelligence {
             }
         }
 
-        console.log(
+        debugLog(
             'Locator strategy: NONE'
         );
 
@@ -120,23 +124,7 @@ export class LocatorIntelligence {
         const locator =
             `#${element.id}`;
 
-        const count =
-            await page.locator(locator).count();
-
-        if (count !== 1) {
-            return null;
-        }
-
-        console.log(
-            'Locator strategy: ID'
-        );
-
-        return {
-            locator,
-            strategy: 'ID',
-            confidence: 'HIGH',
-            reason: 'Unique ID'
-        };
+        return this.uniqueLocator(page, locator, 'ID', 'ID');
     }
 
     private async tryName(
@@ -151,23 +139,7 @@ export class LocatorIntelligence {
         const locator =
             `[name="${element.name}"]`;
 
-        const count =
-            await page.locator(locator).count();
-
-        if (count !== 1) {
-            return null;
-        }
-
-        console.log(
-            'Locator strategy: NAME'
-        );
-
-        return {
-            locator,
-            strategy: 'NAME',
-            confidence: 'HIGH',
-            reason: 'Unique name'
-        };
+        return this.uniqueLocator(page, locator, 'NAME', 'name');
     }
 
     private async trySubmitValue(
@@ -185,23 +157,7 @@ export class LocatorIntelligence {
         const locator =
             `input[type="submit"][value="${element.value}"]`;
 
-        const count =
-            await page.locator(locator).count();
-
-        if (count !== 1) {
-            return null;
-        }
-
-        console.log(
-            'Locator strategy: SUBMIT VALUE'
-        );
-
-        return {
-            locator,
-            strategy: 'SUBMIT VALUE',
-            confidence: 'HIGH',
-            reason: 'Unique submit value'
-        };
+        return this.uniqueLocator(page, locator, 'SUBMIT VALUE', 'submit value');
     }
 
     private async tryText(
@@ -238,30 +194,7 @@ export class LocatorIntelligence {
                 `${element.tag}:has-text("${text}")`;
         }
 
-        const count =
-            await page.locator(locator).count();
-
-        if (count !== 1) {
-
-            if (count > 1) {
-                console.log(
-                    'Text locator is ambiguous'
-                );
-            }
-
-            return null;
-        }
-
-        console.log(
-            'Locator strategy: TEXT'
-        );
-
-        return {
-            locator,
-            strategy: 'TEXT',
-            confidence: 'HIGH',
-            reason: 'Unique element text'
-        };
+        return this.uniqueLocator(page, locator, 'TEXT', 'element text');
     }
 
     private async tryPlaceholder(
@@ -276,30 +209,7 @@ export class LocatorIntelligence {
         const locator =
             `[placeholder="${element.placeholder}"]`;
 
-        const count =
-            await page.locator(locator).count();
-
-        if (count !== 1) {
-
-            if (count > 1) {
-                console.log(
-                    'Placeholder locator is ambiguous'
-                );
-            }
-
-            return null;
-        }
-
-        console.log(
-            'Locator strategy: PLACEHOLDER'
-        );
-
-        return {
-            locator,
-            strategy: 'PLACEHOLDER',
-            confidence: 'HIGH',
-            reason: 'Unique placeholder'
-        };
+        return this.uniqueLocator(page, locator, 'PLACEHOLDER', 'placeholder');
     }
 
     private async tryAriaLabel(
@@ -314,30 +224,7 @@ export class LocatorIntelligence {
         const locator =
             `[aria-label="${element.ariaLabel}"]`;
 
-        const count =
-            await page.locator(locator).count();
-
-        if (count !== 1) {
-
-            if (count > 1) {
-                console.log(
-                    'Aria-label locator is ambiguous'
-                );
-            }
-
-            return null;
-        }
-
-        console.log(
-            'Locator strategy: ARIA-LABEL'
-        );
-
-        return {
-            locator,
-            strategy: 'ARIA-LABEL',
-            confidence: 'HIGH',
-            reason: 'Unique aria-label'
-        };
+        return this.uniqueLocator(page, locator, 'ARIA-LABEL', 'aria-label');
     }
 
     private async tryTitle(
@@ -352,30 +239,43 @@ export class LocatorIntelligence {
         const locator =
             `[title="${element.title}"]`;
 
-        const count =
-            await page.locator(locator).count();
+        return this.uniqueLocator(page, locator, 'TITLE', 'title');
+    }
 
-        if (count !== 1) {
-
-            if (count > 1) {
-                console.log(
-                    'Title locator is ambiguous'
-                );
-            }
-
-            return null;
+    /** Prefer a unique attribute match; if duplicate matches include hidden controls, scope to the one visible match. */
+    private async uniqueLocator(
+        page: Page,
+        locator: string,
+        strategy: LocatorStrategy,
+        description: string
+    ): Promise<LocatorResult | null> {
+        const count = await page.locator(locator).count();
+        if (count === 1) {
+            debugLog(`Locator strategy: ${strategy}`);
+            return {
+                locator,
+                strategy,
+                confidence: 'HIGH',
+                reason: `Unique ${description}`
+            };
         }
 
-        console.log(
-            'Locator strategy: TITLE'
-        );
+        if (count > 1) {
+            const visibleLocator = `${locator}:visible`;
+            const visibleCount = await page.locator(visibleLocator).count();
+            if (visibleCount === 1) {
+                debugLog(`Locator strategy: ${strategy} (visible match)`);
+                return {
+                    locator: visibleLocator,
+                    strategy,
+                    confidence: 'MEDIUM',
+                    reason: `Unique visible ${description}`
+                };
+            }
+            debugLog(`${description} locator is ambiguous`);
+        }
 
-        return {
-            locator,
-            strategy: 'TITLE',
-            confidence: 'HIGH',
-            reason: 'Unique title'
-        };
+        return null;
     }
 
     private async tryFormContextId(
@@ -459,7 +359,7 @@ export class LocatorIntelligence {
 
                 if (count === 1) {
 
-                    console.log(
+                    debugLog(
                         'Locator strategy: FORM CONTEXT + ID'
                     );
 
@@ -559,7 +459,7 @@ export class LocatorIntelligence {
 
                 if (count === 1) {
 
-                    console.log(
+                    debugLog(
                         'Locator strategy: FORM CONTEXT + NAME'
                     );
 

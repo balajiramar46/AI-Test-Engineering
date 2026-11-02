@@ -1,6 +1,10 @@
 import { CandidateScore } from '../models/CandidateScore';
 import { StrategyPriority } from '../locator/StrategyPriority';
 
+const debugLog = (...args: unknown[]): void => {
+    if (process.env.FRAMEWORK_DEBUG === '1') console.log(...args);
+};
+
 export class CandidateSelector {
 
     selectBest(
@@ -9,7 +13,7 @@ export class CandidateSelector {
 
         if (scores.length === 0) {
 
-            console.log(
+            debugLog(
                 'Candidate selection: NO CANDIDATES'
             );
 
@@ -36,7 +40,7 @@ export class CandidateSelector {
         // highest score
         if (topCandidates.length === 1) {
 
-            console.log(
+            debugLog(
                 'Candidate selection: BEST',
                 topCandidates[0].index
             );
@@ -46,11 +50,11 @@ export class CandidateSelector {
 
         // Step 3: Same score.
         // Compare locator strategies.
-        console.log(
+        debugLog(
             'Candidates have equal scores.'
         );
 
-        console.log(
+        debugLog(
             'Comparing locator strategies...'
         );
 
@@ -66,7 +70,7 @@ export class CandidateSelector {
             candidatesWithStrategy.length === 1
         ) {
 
-            console.log(
+            debugLog(
                 'Candidate selection: BEST by strategy',
                 candidatesWithStrategy[0].index
             );
@@ -116,7 +120,7 @@ export class CandidateSelector {
                 )
             ) {
 
-                console.log(
+                debugLog(
                     'Candidate selection: BEST by strategy priority',
                     best.index
                 );
@@ -126,11 +130,11 @@ export class CandidateSelector {
         }
 
         // Still ambiguous
-        console.log(
+        debugLog(
             'Candidate selection: AMBIGUOUS'
         );
 
-        console.log(
+        debugLog(
             'Ambiguous candidates:',
             topCandidates
         );

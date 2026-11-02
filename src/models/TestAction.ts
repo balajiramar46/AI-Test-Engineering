@@ -1,6 +1,6 @@
 export interface TestAction {
 
-   action: 'click' | 'fill' | 'check' | 'uncheck' | 'select';
+   action: 'click' | 'fill' | 'check' | 'uncheck' | 'select' | 'press' | 'pageObject';
 
     target: {
         category: string;
@@ -8,6 +8,12 @@ export interface TestAction {
         value?: string;
         id?: string;
         name?: string;
+        placeholder?: string;
+        ariaLabel?: string;
+        title?: string;
+        intent?: 'search';
+        pageObject?: 'ProductSearchPage';
+        method?: 'searchFor' | 'openProduct' | 'addToCart';
     };
 
     inputValue?: string;

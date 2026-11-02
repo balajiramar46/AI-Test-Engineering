@@ -15,4 +15,6 @@ export interface ElementTarget {
     ariaLabel?: string;
 
     title?: string;
+
+    intent?: 'search';
 }

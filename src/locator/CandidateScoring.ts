@@ -26,7 +26,8 @@ private updateStrongestStrategy(
 }
     async scoreCandidates(
         page: Page,
-        candidates: DiscoveredElement[]
+        candidates: DiscoveredElement[],
+        intent?: 'search'
     ): Promise<CandidateScore[]> {
 
         const results: CandidateScore[] = [];
@@ -61,6 +62,20 @@ private updateStrongestStrategy(
                 reasons.push(
                     'Element is hidden (-20)'
                 );
+            }
+
+            if (intent === 'search') {
+                const searchClues = [
+                    element.text,
+                    element.name,
+                    element.placeholder,
+                    element.ariaLabel,
+                    element.title
+                ].filter(Boolean).join(' ').toLowerCase();
+                if (/search|query|lookup|find/.test(searchClues)) {
+                    score += 50;
+                    reasons.push('Element metadata matches search intent (+50)');
+                }
             }
 
             // -----------------------------------------

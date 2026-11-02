@@ -1,20 +1,32 @@
 import { Page } from '@playwright/test';
 
+const debugLog = (...args: unknown[]): void => {
+    if (process.env.FRAMEWORK_DEBUG === '1') console.log(...args);
+};
+
 export class ActionExecutor {
+
+    async pressKey(
+        page: Page,
+        key: string
+    ): Promise<void> {
+        debugLog(`Executing KEY PRESS: ${key}`);
+        await page.keyboard.press(key);
+    }
 
     async click(
         page: Page,
         locator: string
     ): Promise<void> {
 
-        console.log(
+        debugLog(
             'Executing CLICK:',
             locator
         );
 
         await page.locator(locator).click();
 
-        console.log(
+        debugLog(
             'CLICK completed successfully'
         );
     }
@@ -26,13 +38,13 @@ export class ActionExecutor {
         value: string
     ): Promise<void> {
 
-        console.log(
+        debugLog(
             `Executing FILL: ${locator} = "${value}"`
         );
 
         await page.locator(locator).fill(value);
 
-        console.log(
+        debugLog(
             'FILL completed successfully'
         );
     }
@@ -43,14 +55,14 @@ export class ActionExecutor {
         locator: string
     ): Promise<void> {
 
-        console.log(
+        debugLog(
             'Executing CHECK:',
             locator
         );
 
         await page.locator(locator).check();
 
-        console.log(
+        debugLog(
             'CHECK completed successfully'
         );
     }
@@ -61,14 +73,14 @@ export class ActionExecutor {
         locator: string
     ): Promise<void> {
 
-        console.log(
+        debugLog(
             'Executing UNCHECK:',
             locator
         );
 
         await page.locator(locator).uncheck();
 
-        console.log(
+        debugLog(
             'UNCHECK completed successfully'
         );
     }
@@ -80,7 +92,7 @@ export class ActionExecutor {
         value: string
     ): Promise<void> {
 
-        console.log(
+        debugLog(
             `Executing SELECT: ${locator} = "${value}"`
         );
 
@@ -88,7 +100,7 @@ export class ActionExecutor {
             .locator(locator)
             .selectOption(value);
 
-        console.log(
+        debugLog(
             'SELECT completed successfully'
         );
     }

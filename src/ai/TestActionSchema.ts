@@ -6,7 +6,9 @@ export const TestActionSchema = z.object({
         'fill',
         'check',
         'uncheck',
-        'select'
+        'select',
+        'press',
+        'pageObject'
     ]),
 
     target: z.object({
@@ -15,7 +17,13 @@ export const TestActionSchema = z.object({
         text: z.string().optional(),
         value: z.string().optional(),
         id: z.string().optional(),
-        name: z.string().optional()
+        name: z.string().optional(),
+        placeholder: z.string().optional(),
+        ariaLabel: z.string().optional(),
+        title: z.string().optional(),
+        intent: z.enum(['search']).optional(),
+        pageObject: z.enum(['ProductSearchPage']).optional(),
+        method: z.enum(['searchFor', 'openProduct', 'addToCart']).optional()
     }),
 
     inputValue: z.string().optional()
