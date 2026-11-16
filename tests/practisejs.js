@@ -1,23 +1,13 @@
-function findpair(arr,target){
-let seen=new Set();
-let result=[];
-for(let n of arr){
-    
-        let compliment=target-n;
-    
-
-if(seen.has(compliment)){
-    result.push([compliment,n]);
+function countcharfre(arr){
+    let map=new Map();
+    for(let ch of arr){
+        if(map.has(ch)){
+            map.set(ch,map.get(ch)+1);
+        }else{
+            map.set(ch,1);
+        }
+    }
+    return map;
 
 }
-seen.add(n);
-}
-return result;
-}
-,
-i/p=([1,2,4,5],3)
-open(1,2)
-arr,tat
-fucntion 
-let seen
-
+console.log(countcharfre([2,43,42,2,1,1]));
